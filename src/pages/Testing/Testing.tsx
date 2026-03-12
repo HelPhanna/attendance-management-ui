@@ -1,10 +1,10 @@
-
 function Testing() {
-    return (
-        <div>
-            <h1>Hello from Synayut</h1>
-        </div>
-    )
+  return (
+    <div>
+      <h1>Hello from Synayut</h1>
+      <h1>Hello from Phanna</h1>
+    </div>
+  );
 }
 
-export default Testing
+export default Testing;
