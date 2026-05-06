@@ -63,24 +63,7 @@ npm run build
 npm run preview
 ```
 
-## 7. Important Folders
-
-- [src/app](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\app): app wiring, routes, store
-- [src/features](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\features): feature modules
-- [src/shared](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\shared): shared API/auth/components/icons
-- [src/shared/api/http.ts](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\shared\api\http.ts): axios base config
-
-## 8. Handover Notes
-
-- Keep frontend API calls aligned with backend route/response changes.
-- Main auth pages:
-  - [LoginPage.tsx](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\features\auth\pages\LoginPage.tsx)
-  - [RegisterPage.tsx](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\features\auth\pages\RegisterPage.tsx)
-- Main attendance pages:
-  - [AttendancePage.tsx](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\features\attendance\pages\AttendancePage.tsx)
-  - [ReportsAnalyticsPage.tsx](D:\Year 3 Semester 2\SA\Attendance-Management\attendance-management-ui\src\features\attendance\pages\ReportsAnalyticsPage.tsx)
-
-## 9. Suggested Daily Workflow
+## 7. Suggested Daily Workflow
 
 1. Pull latest code.
 2. Run `npm install` if dependencies changed.
