@@ -39,6 +39,7 @@ export type StudentItem = {
 
 export type FilterStudentResult = {
   student_id: number;
+  student_code: string;
   name: string;
   status: "present" | "absent" | "permission" | null;
   comment: string | null;
@@ -203,10 +204,13 @@ export async function saveAttendanceRecords(params: {
     comment: string | null;
   }>;
 }) {
-  return apiRequest<{ success: boolean; message: string }>("/attendance-records", {
-    method: "PUT",
-    body: params,
-  });
+  return apiRequest<{ success: boolean; message: string }>(
+    "/attendance-records",
+    {
+      method: "PUT",
+      body: params,
+    },
+  );
 }
 
 export async function exportAttendanceReport(
@@ -216,6 +220,7 @@ export async function exportAttendanceReport(
     term_id: number;
     class_id: number;
     teacher_id: number;
+    class_session_id?: number;
     start_time: string;
     end_time: string;
   },
@@ -232,7 +237,28 @@ export async function exportAttendanceReport(
   });
 
   if (!response.ok) {
-    throw new Error(`Export failed (${response.status})`);
+    let message = `Export failed (${response.status})`;
+    try {
+      const errorData = (await response.json()) as {
+        message?: string;
+        errors?: Record<string, string[]>;
+      };
+      if (errorData?.message) {
+        message = errorData.message;
+      }
+      if (errorData?.errors) {
+        const firstErrorGroup = Object.values(errorData.errors)[0];
+        const firstError = Array.isArray(firstErrorGroup)
+          ? firstErrorGroup[0]
+          : undefined;
+        if (firstError) {
+          message = `${message}: ${firstError}`;
+        }
+      }
+    } catch {
+      // Keep generic message when response body is not JSON.
+    }
+    throw new Error(message);
   }
 
   const blob = await response.blob();

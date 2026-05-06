@@ -1,7 +1,19 @@
+import axios, { AxiosError } from "axios";
 import { getAuthToken } from "@shared/auth/session";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://127.0.0.1:8000/api";
+
+// ─── Axios instance (no interceptors — token attached per-request below) ──
+
+export const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    Accept: "application/json",
+  },
+});
+
+// ─── HttpError ────────────────────────────────────────────────────────────
 
 export class HttpError extends Error {
   status: number;
@@ -14,9 +26,28 @@ export class HttpError extends Error {
   }
 }
 
+function toHttpError(err: unknown): never {
+  if (err instanceof AxiosError) {
+    const status = err.response?.status ?? 0;
+    const payload = err.response?.data ?? null;
+    const message =
+      typeof payload === "object" &&
+      payload !== null &&
+      "message" in payload &&
+      typeof (payload as Record<string, unknown>).message === "string"
+        ? ((payload as Record<string, unknown>).message as string)
+        : err.message || `Request failed (${status})`;
+    throw new HttpError(message, status, payload);
+  }
+  throw err;
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────
+
 type RequestOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
+  /** Set false to skip the Authorization header (public endpoints) */
   auth?: boolean;
 };
 
@@ -26,119 +57,70 @@ type FormDataRequestOptions = {
   auth?: boolean;
 };
 
-function parseJsonPayload(text: string): unknown {
-  const withoutBom = text.replace(/^\uFEFF/, "").trim();
-  if (!withoutBom) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(withoutBom);
-  } catch {
-    const firstJsonCharIndex = withoutBom.search(/[[{]/);
-    if (firstJsonCharIndex === -1) {
-      throw new Error("The server returned invalid JSON.");
-    }
-
-    const recovered = withoutBom.slice(firstJsonCharIndex);
-    return JSON.parse(recovered);
-  }
-}
+// ─── apiRequest (JSON) ────────────────────────────────────────────────────
 
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-  const token = getAuthToken();
-  const shouldUseAuth = options.auth ?? true;
+  const url = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const method = options.method ?? "GET";
+  const shouldAttachToken = options.auth !== false;
 
   const headers: Record<string, string> = {
-    Accept: "application/json",
+    "Content-Type": "application/json",
   };
 
-  if (options.body !== undefined) {
-    headers["Content-Type"] = "application/json";
+  if (shouldAttachToken) {
+    const token = getAuthToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
   }
 
-  if (shouldUseAuth && token) {
-    headers.Authorization = `Bearer ${token}`;
+  try {
+    const response = await axiosInstance.request<T>({
+      url,
+      method,
+      data: options.body,
+      headers,
+    });
+    return response.data;
+  } catch (err) {
+    toHttpError(err);
   }
-
-  const response = await fetch(url, {
-    method: options.method ?? "GET",
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
-
-  let payload: unknown = null;
-  const contentType = response.headers.get("content-type") || "";
-  const rawText = await response.text();
-
-  if (contentType.includes("application/json")) {
-    payload = parseJsonPayload(rawText);
-  } else {
-    payload = rawText;
-  }
-
-  if (!response.ok) {
-    const message =
-      typeof payload === "object" &&
-      payload &&
-      "message" in payload &&
-      typeof payload.message === "string"
-        ? payload.message
-        : `Request failed (${response.status})`;
-
-    throw new HttpError(message, response.status, payload);
-  }
-
-  return payload as T;
 }
+
+// ─── apiRequestFormData (multipart) ──────────────────────────────────────
 
 export async function apiRequestFormData<T>(
   endpoint: string,
   options: FormDataRequestOptions,
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
-  const token = getAuthToken();
-  const shouldUseAuth = options.auth ?? true;
+  const url = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const method = options.method ?? "POST";
+  const shouldAttachToken = options.auth !== false;
 
-  const headers: Record<string, string> = {
-    Accept: "application/json",
-  };
+  // Do NOT set Content-Type — axios sets it automatically with the correct
+  // multipart boundary when the body is FormData
+  const headers: Record<string, string> = {};
 
-  if (shouldUseAuth && token) {
-    headers.Authorization = `Bearer ${token}`;
+  if (shouldAttachToken) {
+    const token = getAuthToken();
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
   }
 
-  const response = await fetch(url, {
-    method: options.method ?? "POST",
-    headers,
-    body: options.body,
-  });
-
-  let payload: unknown = null;
-  const contentType = response.headers.get("content-type") || "";
-  const rawText = await response.text();
-
-  if (contentType.includes("application/json")) {
-    payload = parseJsonPayload(rawText);
-  } else {
-    payload = rawText;
+  try {
+    const response = await axiosInstance.request<T>({
+      url,
+      method,
+      data: options.body,
+      headers,
+    });
+    return response.data;
+  } catch (err) {
+    toHttpError(err);
   }
-
-  if (!response.ok) {
-    const message =
-      typeof payload === "object" &&
-      payload &&
-      "message" in payload &&
-      typeof payload.message === "string"
-        ? payload.message
-        : `Request failed (${response.status})`;
-
-    throw new HttpError(message, response.status, payload);
-  }
-
-  return payload as T;
 }

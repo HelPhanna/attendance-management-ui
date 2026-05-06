@@ -19,18 +19,11 @@ function todayDateValue(): string {
   return new Date().toISOString().split("T")[0];
 }
 
-function formatDateLabel(dateValue: string): string {
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) {
-    return dateValue;
-  }
-
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-}
+const DATE_LABEL_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+});
 
 const emptySummary: ReportSummary = {
   classes_held: 0,
@@ -41,6 +34,7 @@ const emptySummary: ReportSummary = {
 };
 
 export default function ReportsAnalyticsPage() {
+  const PAGE_SIZE = 100;
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [terms, setTerms] = useState<Term[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
@@ -56,6 +50,7 @@ export default function ReportsAnalyticsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState<null | "pdf" | "xlsx">(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +145,7 @@ export default function ReportsAnalyticsPage() {
 
       setSummary(response.summary);
       setRows(response.daily);
+      setPage(1);
       toast.success("Report generated.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Report generation failed.";
@@ -184,6 +180,30 @@ export default function ReportsAnalyticsPage() {
       setIsExporting(null);
     }
   };
+
+  const formattedRows = useMemo(
+    () =>
+      rows.map((row) => ({
+        ...row,
+        dateLabel: Number.isNaN(new Date(row.date).getTime())
+          ? row.date
+          : DATE_LABEL_FORMATTER.format(new Date(row.date)),
+      })),
+    [rows],
+  );
+
+  const pageCount = Math.max(1, Math.ceil(formattedRows.length / PAGE_SIZE));
+
+  const pagedRows = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return formattedRows.slice(start, start + PAGE_SIZE);
+  }, [formattedRows, page, PAGE_SIZE]);
+
+  useEffect(() => {
+    if (page > pageCount) {
+      setPage(pageCount);
+    }
+  }, [page, pageCount]);
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-slate-100 pb-10">
@@ -293,7 +313,10 @@ export default function ReportsAnalyticsPage() {
         <div className="mt-6 overflow-hidden rounded border border-slate-300 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
             <h3 className="text-xl font-semibold text-slate-800">Daily Attendance Summary</h3>
-            <p className="text-sm text-slate-500">Last {rows.length || 0} Days</p>
+            <p className="text-sm text-slate-500">
+              Rows: {rows.length || 0}
+              {rows.length > PAGE_SIZE ? ` (showing ${pagedRows.length} per page)` : ""}
+            </p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse text-left">
@@ -315,9 +338,9 @@ export default function ReportsAnalyticsPage() {
                     </td>
                   </tr>
                 )}
-                {rows.map((row) => (
+                {pagedRows.map((row) => (
                   <tr key={`${row.date}-${row.class_name}`} className="border-t border-slate-200">
-                    <td className="px-6 py-3 font-medium text-slate-700">{formatDateLabel(row.date)}</td>
+                    <td className="px-6 py-3 font-medium text-slate-700">{row.dateLabel}</td>
                     <td className="px-6 py-3 text-slate-600">{row.class_name}</td>
                     <td className="px-6 py-3 text-slate-700">
                       <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
@@ -343,6 +366,29 @@ export default function ReportsAnalyticsPage() {
             </table>
           </div>
         </div>
+        {rows.length > PAGE_SIZE && (
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page <= 1}
+              className="h-9 rounded border border-slate-300 bg-white px-3 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-slate-600">
+              Page {page} of {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+              disabled={page >= pageCount}
+              className="h-9 rounded border border-slate-300 bg-white px-3 text-sm text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 flex justify-end gap-3">
           <button

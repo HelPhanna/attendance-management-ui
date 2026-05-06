@@ -172,19 +172,28 @@ export async function exportAttendanceAnalytics(
     headers: {
       Authorization: token ? `Bearer ${token}` : "",
       "Content-Type": "application/json",
-      Accept: "application/octet-stream",
+      Accept: "*/*",
     },
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const errorBody = await response.json().catch(() => null);
+      const message =
+        errorBody?.message ||
+        errorBody?.errors?.[Object.keys(errorBody.errors ?? {})[0]]?.[0] ||
+        `Export failed (${response.status})`;
+      throw new Error(message);
+    }
     throw new Error(`Export failed (${response.status})`);
   }
 
   const blob = await response.blob();
   const disposition = response.headers.get("content-disposition");
-  const filenameMatch = disposition?.match(/filename="?([^"]+)"?/);
-  const filename = filenameMatch?.[1] || `attendance-report.${format}`;
+  const filenameMatch = disposition?.match(/filename\*?=(?:UTF-8'')?\"?([^\";]+)\"?/i);
+  const filename = decodeURIComponent(filenameMatch?.[1] || `attendance-report.${format}`);
 
   const fileUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

@@ -27,8 +27,12 @@ export type AuthSession = {
 
 const AUTH_STORAGE_KEY = "attendance_auth_session";
 
+export const SESSION_UPDATED_EVENT = "attendance:session_updated";
+
 export function saveSession(session: AuthSession): void {
   localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  // Notify all components that the session has changed
+  window.dispatchEvent(new CustomEvent(SESSION_UPDATED_EVENT, { detail: session }));
 }
 
 export function getSession(): AuthSession | null {

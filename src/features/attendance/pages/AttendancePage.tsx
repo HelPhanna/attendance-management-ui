@@ -3,13 +3,11 @@ import toast from "react-hot-toast";
 import {
   type ClassItem,
   type ClassSession,
-  type StudentItem,
   type TeacherItem,
   type Term,
   exportAttendanceReport,
   fetchClasses,
   fetchClassSessions,
-  fetchStudents,
   fetchTeachers,
   fetchTeachersFallbackFromSessions,
   fetchTerms,
@@ -90,7 +88,8 @@ function makeSessionOptions(
   const classNameMap = new Map(classes.map((item) => [item.id, item.name]));
 
   return sessions.map((session) => {
-    const className = classNameMap.get(session.class_id) || `Class #${session.class_id}`;
+    const className =
+      classNameMap.get(session.class_id) || `Class #${session.class_id}`;
     const start = formatTimeToHM(session.start_time);
     const end = formatTimeToHM(session.end_time);
     const normalizedStart = normalizeTimeToHIS(session.start_time);
@@ -108,7 +107,10 @@ function makeSessionOptions(
   });
 }
 
-function statusButtonClass(status: AttendanceStatus, active: AttendanceStatus): string {
+function statusButtonClass(
+  status: AttendanceStatus,
+  active: AttendanceStatus,
+): string {
   const base =
     "inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold transition";
 
@@ -132,7 +134,6 @@ export default function AttendancePage() {
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [sessions, setSessions] = useState<ClassSession[]>([]);
   const [teachers, setTeachers] = useState<TeacherItem[]>([]);
-  const [students, setStudents] = useState<StudentItem[]>([]);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   const [date, setDate] = useState(todayDateValue());
@@ -154,11 +155,10 @@ export default function AttendancePage() {
     async function bootstrap() {
       setIsBootstrapping(true);
       try {
-        const [termsData, classesData, sessionsData, studentsData] = await Promise.all([
+        const [termsData, classesData, sessionsData] = await Promise.all([
           fetchTerms(),
           fetchClasses(),
           fetchClassSessions(),
-          fetchStudents(),
         ]);
 
         let teachersData: TeacherItem[] = [];
@@ -176,12 +176,13 @@ export default function AttendancePage() {
           setTerms(termsData);
           setClasses(classesData);
           setSessions(sessionsData);
-          setStudents(studentsData);
           setTeachers(teachersData);
         }
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Failed to load attendance data.";
+          error instanceof Error
+            ? error.message
+            : "Failed to load attendance data.";
         toast.error(message);
       } finally {
         if (!cancelled) {
@@ -244,14 +245,13 @@ export default function AttendancePage() {
         end_time: endTime,
       });
 
-      const studentMap = new Map(students.map((student) => [student.id, student]));
-
       const mappedRows = response.students.map((item) => {
-        const student = studentMap.get(item.student_id);
         return {
           studentId: item.student_id,
-          rollNo: student?.student_code || String(item.student_id),
-          name: item.name || student?.name || `Student #${item.student_id}`,
+          rollNo:
+            item.student_code ||
+            `STU-${String(item.student_id).padStart(3, "0")}`,
+          name: item.name || `Student #${item.student_id}`,
           status: item.status,
           comment: item.comment || "",
         };
@@ -282,7 +282,10 @@ export default function AttendancePage() {
     await loadAttendanceByCriteria(true);
   };
 
-  const setStatus = (index: number, nextStatus: Exclude<AttendanceStatus, null>) => {
+  const setStatus = (
+    index: number,
+    nextStatus: Exclude<AttendanceStatus, null>,
+  ) => {
     setRows((current) =>
       current.map((row, rowIndex) => {
         if (rowIndex !== index) {
@@ -353,6 +356,7 @@ export default function AttendancePage() {
         term_id: termId,
         class_id: selectedSession.classId,
         teacher_id: teacherId,
+        class_session_id: classSessionId ?? undefined,
         start_time: startTime,
         end_time: endTime,
       });
@@ -374,7 +378,9 @@ export default function AttendancePage() {
           </h2>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <label className="space-y-1.5 text-sm">
-              <span className="font-semibold text-slate-600">Date Selection *</span>
+              <span className="font-semibold text-slate-600">
+                Date Selection *
+              </span>
               <input
                 type="date"
                 value={date}
@@ -413,7 +419,9 @@ export default function AttendancePage() {
               </select>
             </label>
             <label className="space-y-1.5 text-sm">
-              <span className="font-semibold text-slate-600">Teacher Name *</span>
+              <span className="font-semibold text-slate-600">
+                Teacher Name *
+              </span>
               <select
                 value={teacherId || ""}
                 onChange={(event) => setTeacherId(Number(event.target.value))}
@@ -442,7 +450,8 @@ export default function AttendancePage() {
 
         {!searched && (
           <div className="rounded border border-slate-200 bg-white py-28 text-center text-lg text-slate-500">
-            Select search criteria and click "Search Records" to load attendance.
+            Select search criteria and click "Search Records" to load
+            attendance.
           </div>
         )}
 
@@ -482,7 +491,9 @@ export default function AttendancePage() {
                 <button
                   type="button"
                   onClick={handleSave}
-                  disabled={!classSessionId || !rows.length || !isDirty || isSaving}
+                  disabled={
+                    !classSessionId || !rows.length || !isDirty || isSaving
+                  }
                   className="h-10 rounded bg-emerald-700 px-6 font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-slate-400"
                 >
                   {isSaving ? "Saving..." : "Save Records"}
@@ -496,17 +507,28 @@ export default function AttendancePage() {
                   <tr className="bg-slate-900 text-white">
                     <th className="w-24 px-6 py-4">Roll No.</th>
                     <th className="w-80 px-6 py-4">Student Name</th>
-                    <th className="w-32 bg-emerald-900 px-6 py-4 text-center">Presence</th>
-                    <th className="w-32 bg-red-900 px-6 py-4 text-center">Absence</th>
-                    <th className="w-32 bg-indigo-900 px-6 py-4 text-center">Permission</th>
+                    <th className="w-32 bg-emerald-900 px-6 py-4 text-center">
+                      Presence
+                    </th>
+                    <th className="w-32 bg-red-900 px-6 py-4 text-center">
+                      Absence
+                    </th>
+                    <th className="w-32 bg-indigo-900 px-6 py-4 text-center">
+                      Permission
+                    </th>
                     <th className="px-6 py-4">Comments</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row, index) => (
-                    <tr key={row.studentId} className="border-t border-slate-200">
+                    <tr
+                      key={row.studentId}
+                      className="border-t border-slate-200"
+                    >
                       <td className="px-6 py-4 text-slate-700">{row.rollNo}</td>
-                      <td className="px-6 py-4 font-medium text-slate-800">{row.name}</td>
+                      <td className="px-6 py-4 font-medium text-slate-800">
+                        {row.name}
+                      </td>
                       <td className="bg-emerald-50 px-6 py-4 text-center">
                         <button
                           type="button"
@@ -529,7 +551,10 @@ export default function AttendancePage() {
                         <button
                           type="button"
                           onClick={() => setStatus(index, "permission")}
-                          className={statusButtonClass("permission", row.status)}
+                          className={statusButtonClass(
+                            "permission",
+                            row.status,
+                          )}
                         >
                           {row.status === "permission" ? "↻" : "·"}
                         </button>
@@ -538,7 +563,9 @@ export default function AttendancePage() {
                         <input
                           type="text"
                           value={row.comment}
-                          onChange={(event) => setComment(index, event.target.value)}
+                          onChange={(event) =>
+                            setComment(index, event.target.value)
+                          }
                           placeholder="Add note..."
                           className="w-full border-b border-slate-300 bg-transparent px-1 py-1.5 text-slate-700 outline-none focus:border-slate-500"
                         />
@@ -551,21 +578,35 @@ export default function AttendancePage() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-6 py-4 text-slate-600">
                 <p>Showing {rows.length} students</p>
                 <p className="flex items-center gap-5">
-                  <span className="text-emerald-700">Present: {statCounts.present}</span>
-                  <span className="text-red-600">Absent: {statCounts.absent}</span>
-                  <span className="text-blue-600">Permission: {statCounts.permission}</span>
+                  <span className="text-emerald-700">
+                    Present: {statCounts.present}
+                  </span>
+                  <span className="text-red-600">
+                    Absent: {statCounts.absent}
+                  </span>
+                  <span className="text-blue-600">
+                    Permission: {statCounts.permission}
+                  </span>
                 </p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
               <article className="rounded border border-slate-300 bg-white p-5 shadow-sm">
-                <p className="text-lg font-semibold text-slate-500">Total Students</p>
-                <p className="mt-2 text-5xl font-bold text-slate-900">{statCounts.total}</p>
-                <p className="mt-2 text-sm text-slate-500">Registered in selected class</p>
+                <p className="text-lg font-semibold text-slate-500">
+                  Total Students
+                </p>
+                <p className="mt-2 text-5xl font-bold text-slate-900">
+                  {statCounts.total}
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                  Registered in selected class
+                </p>
               </article>
               <article className="rounded border border-slate-300 bg-white p-5 shadow-sm">
-                <p className="text-lg font-semibold text-slate-500">Average Attendance</p>
+                <p className="text-lg font-semibold text-slate-500">
+                  Average Attendance
+                </p>
                 <p className="mt-2 text-5xl font-bold text-slate-900">
                   {statCounts.average.toFixed(1)}%
                 </p>
@@ -574,11 +615,15 @@ export default function AttendancePage() {
                 </p>
               </article>
               <article className="rounded border border-slate-300 bg-white p-5 shadow-sm">
-                <p className="text-lg font-semibold text-slate-500">Pending Excuses</p>
+                <p className="text-lg font-semibold text-slate-500">
+                  Pending Excuses
+                </p>
                 <p className="mt-2 text-5xl font-bold text-slate-900">
                   {statCounts.permission}
                 </p>
-                <p className="mt-2 text-sm text-amber-600">Requires verification</p>
+                <p className="mt-2 text-sm text-amber-600">
+                  Requires verification
+                </p>
               </article>
             </div>
           </section>

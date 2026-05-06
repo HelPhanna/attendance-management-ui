@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutApi } from "@features/auth/api/authApi";
-import { clearSession, getDisplayName, getSession } from "@shared/auth/session";
+import { SESSION_UPDATED_EVENT, clearSession, getDisplayName, getSession } from "@shared/auth/session";
 import SchoolBadgeIcon from "./SchoolBadgeIcon";
 
 const attendanceTabs = [
@@ -20,6 +21,9 @@ function sectionTitleFromPath(pathname: string): string {
   if (pathname.startsWith("/dashboard/settings")) {
     return "Settings";
   }
+  if (pathname.startsWith("/dashboard/admin")) {
+    return "Admin Management";
+  }
   if (pathname.startsWith("/dashboard/reports")) {
     return "Reports & Analytics";
   }
@@ -32,7 +36,16 @@ function sectionTitleFromPath(pathname: string): string {
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const session = getSession();
+  const [session, setSession] = useState(getSession);
+
+  // Re-render whenever saveSession() is called (e.g. after profile image upload)
+  useEffect(() => {
+    function onSessionUpdated() {
+      setSession(getSession());
+    }
+    window.addEventListener(SESSION_UPDATED_EVENT, onSessionUpdated);
+    return () => window.removeEventListener(SESSION_UPDATED_EVENT, onSessionUpdated);
+  }, []);
 
   const pathname = location.pathname;
   const isSettingsPage = pathname.startsWith("/dashboard/settings");
@@ -43,6 +56,11 @@ export default function Navbar() {
 
   const userDisplayName = getDisplayName(session?.user);
   const userRole = session?.user?.roles?.[0]?.name || "Teacher";
+  const isAdmin = (session?.user?.roles ?? []).some((r) => {
+    const name = (r.name ?? "").toLowerCase();
+    const key  = (r.key  ?? "").toLowerCase();
+    return name === "super_admin" || name === "admin" || key === "super_admin" || key === "admin";
+  });
   const profileImage = session?.user?.userProfile?.image?.trim() || "";
   const initials = userDisplayName
     .split(" ")
@@ -139,6 +157,24 @@ export default function Navbar() {
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4">
           <h1 className="text-3xl font-semibold text-slate-800">{sectionTitle}</h1>
           <div className="flex items-center gap-5 text-sm text-slate-500">
+            {isAdmin && (
+              <Link
+                to="/dashboard/admin"
+                className="inline-flex items-center gap-1 rounded-md bg-indigo-50 px-2 py-1 text-indigo-600 hover:bg-indigo-100"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+                Admin
+              </Link>
+            )}
             <Link
               to="/dashboard/history"
               className="inline-flex items-center gap-1 hover:text-slate-700"

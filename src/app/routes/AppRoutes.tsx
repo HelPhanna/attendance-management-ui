@@ -12,6 +12,7 @@ import LayoutMainPage from "@features/layout/pages/LayoutMainPage";
 import NotFoundPage from "@features/not-found/pages/NotFoundPage";
 import ProfileSettingsPage from "@features/settings/pages/ProfileSettingsPage";
 import SettingsPage from "@features/settings/pages/SettingsPage";
+import AdminManagementPage from "@features/admin/pages/AdminManagementPage";
 import { getSession } from "@shared/auth/session";
 
 function RequireAuth({ children }: { children: ReactElement }) {
@@ -41,6 +42,7 @@ export default function AppRoutes() {
         <Route path="history" element={<RecordHistoryPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="profile" element={<ProfileSettingsPage />} />
+        <Route path="admin" element={<AdminManagementPage />} />
       </Route>
 
       <Route path="/attendance" element={<Navigate to="/dashboard/attendance" replace />} />

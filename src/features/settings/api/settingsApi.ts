@@ -153,8 +153,12 @@ export async function updateUserProfile(payload: {
     formData.append("image", payload.imageFile);
   }
 
+  // Laravel cannot parse multipart/form-data on PUT requests.
+  // Use POST with _method=PUT (method spoofing) so the image file reaches the server.
+  formData.append("_method", "PUT");
+
   return apiRequestFormData<ApiResponse<UserProfileApi>>("/user-profile/update", {
-    method: "PUT",
+    method: "POST",
     body: formData,
   });
 }
