@@ -1,139 +1,94 @@
-# Attendance Management System - Frontend
+﻿# Attendance Management UI
 
-A modern web application for managing student attendance using React, TypeScript, and Vite. This frontend provides a user-friendly interface for authentication, attendance tracking, and management features.
+Frontend application for the Attendance Management System.
+Built with React, TypeScript, Vite, Redux Toolkit, and Tailwind CSS.
 
 ## Features
 
-- **User Authentication**: Secure login, registration, and password recovery
-- **Responsive Design**: Mobile-friendly interface using Tailwind CSS
-- **Type-Safe**: Built with TypeScript for better code quality
-- **Fast Development**: Powered by Vite with Hot Module Replacement (HMR)
-- **Modern Stack**: React 18+ with TypeScript
+- Authentication: login, register, forgot password
+- Attendance workflows: attendance, record history, blacklist, analytics
+- Admin management pages
+- Profile and settings pages
+- Shared layout with role-aware routing
 
-##  Tech Stack
+## Tech Stack
 
-- **Framework**: React 18+
-- **Language**: TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **Linting**: ESLint
+- React 19
+- TypeScript 5
+- Vite 7
+- Redux Toolkit + React Redux
+- React Router
+- Axios
+- Tailwind CSS
+- ESLint
 
-## 📁 Project Structure
+## Prerequisites
 
-```
-src/
-├── components/
-│   ├── common/          # Shared components (Navbar, Footer)
-│   ├── icons/           # Icon components
-│   ├── layouts/         # Layout components
-│   └── user/            # User-related components (Login, Register, etc.)
-├── pages/
-│   ├── auth/            # Authentication pages
-│   ├── layout/          # Layout pages
-│   ├── notfound/        # 404 page
-│   └── Testing/         # Testing components
-├── assets/              # Static assets
-├── App.tsx              # Root component
-├── main.tsx             # Application entry point
-└── index.css            # Global styles
-```
-
-## 🔧 Installation & Setup
-
-### Prerequisites
-
-- Node.js (v16 or higher)
+- Node.js 18+
 - npm
 
-### Installation Steps
+## Setup
 
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd Frontend
-```
-
-2. Install dependencies:
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Start the development server:
+2. Create environment file:
+
+```bash
+cp .env.example .env
+```
+
+3. Start development server:
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+The app runs at `http://localhost:5173` by default.
 
-## 📦 Available Scripts
+## Environment Variables
 
-- **`npm run dev`** - Start development server with HMR
-- **`npm run build`** - Build for production
-- **`npm run preview`** - Preview production build locally
-- **`npm run lint`** - Run ESLint to check code quality
+- `VITE_API_BASE_URL`: Backend API base URL
 
-## 🔐 Authentication
+Example:
 
-The application includes user authentication with the following pages:
-
-- **Login** - User sign-in
-- **Register** - New user registration
-- **Forgot Password** - Password recovery
-
-## 🎨 Styling
-
-This project uses **Tailwind CSS** for styling. Configuration can be found in `tailwind.config.js`.
-
-## 📝 Configuration Files
-
-- **vite.config.ts** - Vite configuration
-- **tsconfig.json** - TypeScript configuration
-- **eslint.config.js** - ESLint rules
-- **tailwind.config.js** - Tailwind CSS configuration
-
-## 🚀 Deployment
-
-Build the project for production:
-
-```bash
-npm run build
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
-The build artifacts will be generated in the `dist/` directory.
+## Scripts
 
-## 📄 License
+- `npm run dev`: Start local dev server
+- `npm run build`: Type-check and build production files
+- `npm run preview`: Preview production build locally
+- `npm run lint`: Run ESLint
 
-This project is part of the School Assignment - Attendance Management System.
+## Project Structure
 
-## 👥 Contributing
-
-For contributions, please follow the project's coding standards and create pull requests for review.
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-globalIgnores(['dist']),
-{
-files: ['**/*.{ts,tsx}'],
-extends: [
-// Other configs...
-// Enable lint rules for React
-reactX.configs['recommended-typescript'],
-// Enable lint rules for React DOM
-reactDom.configs.recommended,
-],
-languageOptions: {
-parserOptions: {
-project: ['./tsconfig.node.json', './tsconfig.app.json'],
-tsconfigRootDir: import.meta.dirname,
-},
-// other options...
-},
-},
-])
-
+```text
+src/
+  app/                 # App bootstrap (store, hooks, routes)
+  assets/              # Static assets
+  features/            # Feature modules
+    admin/
+    attendance/
+    auth/
+    dashboard/
+    layout/
+    not-found/
+    settings/
+  shared/              # Shared components, auth utilities, icons, API helpers
 ```
 
-```
+For more structure details, see `docs/FOLDER_STRUCTURE.md`.
+
+## Build Output
+
+Production files are generated in `dist/`.
+
+## Notes
+
+This UI is part of a school assignment project: Attendance Management System.
