@@ -6,6 +6,13 @@ type LoginResponse = {
   user: SessionUser;
 };
 
+type RegisterPayload = {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+};
+
 export async function loginApi(email: string, password: string) {
   return apiRequest<LoginResponse>("/auth/login", {
     method: "POST",
@@ -17,5 +24,13 @@ export async function loginApi(email: string, password: string) {
 export async function logoutApi() {
   return apiRequest<{ message: string }>("/auth/logout", {
     method: "POST",
+  });
+}
+
+export async function registerApi(payload: RegisterPayload) {
+  return apiRequest<{ message: string }>("/auth/register", {
+    method: "POST",
+    auth: false,
+    body: payload,
   });
 }

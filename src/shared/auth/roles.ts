@@ -3,7 +3,10 @@ import type { SessionUser } from "./session";
 const ADMIN_ROLE_KEYS = new Set(["admin", "super_admin"]);
 
 function normalizeRole(value: string | null | undefined): string {
-  return (value || "").trim().toLowerCase();
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 }
 
 export function getUserRoleKeys(user?: SessionUser | null): string[] {
@@ -18,4 +21,8 @@ export function getUserRoleKeys(user?: SessionUser | null): string[] {
 
 export function hasAdminAccess(user?: SessionUser | null): boolean {
   return getUserRoleKeys(user).some((role) => ADMIN_ROLE_KEYS.has(role));
+}
+
+export function hasSuperAdminAccess(user?: SessionUser | null): boolean {
+  return getUserRoleKeys(user).includes("super_admin");
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { getSession } from "@shared/auth/session";
+import { hasAdminAccess, hasSuperAdminAccess } from "@shared/auth/roles";
 import {
   fetchUsersWithRoles,
   fetchAllRoles,
@@ -41,27 +42,12 @@ import { HttpError } from "@shared/api/http";
 
 function useIsAdmin(): boolean {
   const session = getSession();
-  const roles = session?.user?.roles ?? [];
-  return roles.some((r) => {
-    const name = (r.name ?? "").toLowerCase();
-    const key = (r.key ?? "").toLowerCase();
-    return (
-      name === "super_admin" ||
-      name === "admin" ||
-      key === "super_admin" ||
-      key === "admin"
-    );
-  });
+  return hasAdminAccess(session?.user);
 }
 
 function useIsSuperAdmin(): boolean {
   const session = getSession();
-  const roles = session?.user?.roles ?? [];
-  return roles.some((r) => {
-    const name = (r.name ?? "").toLowerCase();
-    const key = (r.key ?? "").toLowerCase();
-    return name === "super_admin" || key === "super_admin";
-  });
+  return hasSuperAdminAccess(session?.user);
 }
 
 // ─── Tab types ────────────────────────────────────────────────────────────

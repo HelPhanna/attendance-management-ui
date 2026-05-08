@@ -1,18 +1,70 @@
+import { type FormEvent, useState } from "react";
+import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "@app/hooks";
-import { setRegisterField } from "@features/auth/store/authSlice";
+import { registerApi } from "@features/auth/api/authApi";
+import { resetRegisterForm, setRegisterField } from "@features/auth/store/authSlice";
 import AuthShell from "./AuthShell";
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useAppSelector((state) => state.auth.registerForm);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const name = form.fullName.trim();
+    const email = form.email.trim();
+
+    if (!name || !email || !form.password || !form.confirmPassword) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+
+    if (!form.acceptedTerms) {
+      toast.error("Please accept Terms of Service and Privacy Policy.");
+      return;
+    }
+
+    if (form.password.length < 6) {
+      toast.error("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      toast.error("Password confirmation does not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await registerApi({
+        name,
+        email,
+        password: form.password,
+        password_confirmation: form.confirmPassword,
+      });
+
+      dispatch(resetRegisterForm());
+      toast.success("Account created successfully. Please sign in.");
+      navigate("/auth/login");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Registration failed.";
+      toast.error(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <AuthShell
       title="Create Your Account"
       subtitle="Fill in the details below to register."
     >
-      <form className="space-y-4">
+      <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-1.5">
           <label className="text-xs font-medium text-slate-600">Full Name</label>
           <input
@@ -107,9 +159,10 @@ export default function RegisterForm() {
 
         <button
           type="submit"
-          className="mt-2 inline-flex h-10 w-full items-center justify-center rounded bg-slate-900 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300"
+          disabled={isSubmitting}
+          className="mt-2 inline-flex h-10 w-full items-center justify-center rounded bg-slate-900 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          Create Account
+          {isSubmitting ? "Creating Account..." : "Create Account"}
         </button>
         <p className="pt-1 text-center text-xs text-slate-600">
           Already have an account?{" "}
