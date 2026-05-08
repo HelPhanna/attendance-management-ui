@@ -322,6 +322,7 @@ export default function AttendancePage() {
     setIsSaving(true);
     try {
       await saveAttendanceRecords({
+        date,
         class_session_id: classSessionId,
         records: rows.map((row) => ({
           student_id: row.studentId,

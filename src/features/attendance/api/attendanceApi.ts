@@ -197,6 +197,7 @@ export async function filterAttendance(params: {
 }
 
 export async function saveAttendanceRecords(params: {
+  date: string;
   class_session_id: number;
   records: Array<{
     student_id: number;
